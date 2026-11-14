@@ -1,0 +1,35 @@
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uilds/
+/[Bb]uild/
+/MemoryCaptures/
+/Recordings/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build.properties
+.vs/
+.vscode/
+.idea/
+.DS_Store
+__pycache__/
+# Données brutes IGN/OSM (≈ 700 Mo, régénérables avec Tools/) et rendus
+/data/
+*.mp4
+*.geojson
+*.f32

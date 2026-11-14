@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#f7f7f4">
+    <title>Paris Guessr</title>
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #f7f7f4; color: #1d1d22;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: none; -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
+      #unity-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; background: #f7f7f4; outline: none; touch-action: none; }
+      .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        background: #f7f7f4; z-index: 10; padding: 24px; box-sizing: border-box; }
+      h1 { font-size: clamp(26px, 6vw, 52px); margin: 0 0 6px; letter-spacing: .02em; }
+      .sub { opacity: .75; font-size: clamp(13px, 2.6vw, 18px); margin-bottom: 26px; }
+      #bar { width: min(70vw, 460px); height: 10px; border-radius: 6px; background: rgba(0,0,0,.08); border: 2px solid #1d1d22; overflow: hidden; }
+      #bar > div { height: 100%; width: 0; background: #1d1d22; transition: width .2s; }
+      #status { margin-top: 12px; font-size: 14px; opacity: .8; min-height: 1.2em; }
+      #start { display: none; margin-top: 22px; padding: 16px 34px; font-size: 20px; border-radius: 40px; border: 2px solid #1d1d22; background: #1d1d22; color: #fff; font-weight: 700; }
+      .help { margin-top: 18px; font-size: 13px; opacity: .65; max-width: 640px; line-height: 1.5; }
+      #rotate { display: none; z-index: 20; }
+      #rotate .phone { width: 46px; height: 78px; border: 4px solid #1d1d22; border-radius: 9px; margin-bottom: 20px; animation: rot 1.8s ease-in-out infinite; }
+      @keyframes rot { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+      @media (orientation: portrait) and (pointer: coarse) { #rotate.armed { display: flex; } }
+      #err { color: #c62828; white-space: pre-wrap; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="loader" class="overlay">
+      <h1>Paris Guessr</h1>
+      <div class="sub">Retrouve ta rue dans Paris — formes 3D réelles de l'IGN, sans aucune texture</div>
+      <div id="bar"><div></div></div>
+      <div id="status">Chargement…</div>
+      <button id="start">Toucher pour jouer</button>
+      <div class="help" id="help"></div>
+      <div id="err"></div>
+    </div>
+    <div id="rotate" class="overlay armed">
+      <div class="phone"></div>
+      <div>Tourne ton téléphone en mode paysage</div>
+    </div>
+    <script>
+      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+      var canvas = document.querySelector("#unity-canvas");
+      var bar = document.querySelector("#bar > div"), statusEl = document.querySelector("#status"), startBtn = document.querySelector("#start");
+      document.querySelector("#help").innerHTML = isMobile
+        ? "Glisser à gauche pour marcher · glisser à droite pour regarder · bouton CARTE pour placer ton repère"
+        : "Clic pour contrôler la vue · ZQSD/WASD pour marcher · Maj pour courir · M pour la carte · Échap libère la souris";
+      if (!isMobile) document.querySelector("#rotate").classList.remove("armed");
+      var buildUrl = "Build";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/WebGL.data.unityweb",
+        frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
+        codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Dorian Gomes",
+        productName: "Paris Guessr",
+        productVersion: "1.0",
+        devicePixelRatio: isMobile ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2),
+        showBanner: function (msg, type) { if (type == 'error') document.querySelector("#err").textContent += msg + "\n"; console.log("[unity " + type + "] " + msg); }
+      };
+      var instance = null;
+      function goFullscreen() {
+        var el = document.documentElement;
+        try {
+          var p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : (el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null);
+          if (p && p.then) p.then(function () { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {}); }).catch(function () {});
+        } catch (e) {}
+      }
+      startBtn.addEventListener("click", function () {
+        if (isMobile) goFullscreen();
+        document.querySelector("#loader").style.display = "none";
+        canvas.focus();
+      });
+      canvas.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+      var script = document.createElement("script");
+      script.src = buildUrl + "/WebGL.loader.js";
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (p) {
+          bar.style.width = (100 * p) + "%";
+          statusEl.textContent = p < 0.9 ? "Téléchargement… " + Math.round(100 * p) + " %" : "Préparation de Paris…";
+        }).then(function (u) {
+          instance = u; bar.style.width = "100%";
+          statusEl.textContent = "Prêt !"; startBtn.textContent = isMobile ? "Toucher pour jouer (plein écran)" : "Cliquer pour jouer";
+          startBtn.style.display = "inline-block";
+          window.unityInstance = u;
+          if (/[?&]autostart/.test(location.search)) document.querySelector("#loader").style.display = "none";
+        }).catch(function (message) { document.querySelector("#err").textContent = String(message); statusEl.textContent = "Erreur"; });
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
