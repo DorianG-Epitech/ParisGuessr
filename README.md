@@ -4,6 +4,8 @@ Un GeoGuessr de Paris en 3D. À chaque manche, tu atterris en vue à la premièr
 
 ▶ **Jouer dans le navigateur (ordinateur et mobile) :** https://doriang-epitech.github.io/ParisGuessr/
 
+Il existe aussi une **version Three.js**, sans Unity, plus légère (environ 2,5 Mo au démarrage) : https://doriang-epitech.github.io/ParisGuessr3JS/ ([code](https://github.com/DorianG-Epitech/ParisGuessr3JS))
+
 Il n'y a **aucune texture** : la ville est reconstruite uniquement à partir des **formes 3D réelles de l'IGN** (bâtiments, hauteurs, toits, relief, chaussées), avec un rendu à contours noirs façon maquette d'architecte.
 
 ## Règles
